@@ -16,6 +16,7 @@ Requirements
 ====
 * [Python 3.7](https://www.python.org/downloads/release/python-370/)
 * [PyAutoGUI](https://github.com/asweigart/pyautogui)
+* [SpeechRecognition](https://github.com/Uberi/speech_recognition)
 * [clipboard](https://github.com/terryyin/clipboard)
 * [Pydub](http://pydub.com/)
 
