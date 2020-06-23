@@ -1,0 +1,1 @@
+"scrot" must be installed to use screenshot functions in Linux. Run: sudo apt-get install scrot'
