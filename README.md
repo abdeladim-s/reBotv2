@@ -23,9 +23,13 @@ Requirements
 Installation
 ===
 ```shell script
-$ git clone https://github.com/AbdeladimSadiki/reBotv2
-$ cd reBotv2
-$ pip install -r requirements.txt 
+git clone https://github.com/AbdeladimSadiki/reBotv2
+cd reBotv2
+pip install -r requirements.txt 
+```
+"scrot" must be installed to use screenshot functions in Linux. Run: 
+```shell script
+sudo apt-get install scrot
 ```
 
 Usage
