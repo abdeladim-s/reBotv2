@@ -39,7 +39,7 @@ Usage
 * Open a terminal and navigate to the bot folder. 
 * Run the command :
 ```shell script
-$ python bot.py
+python bot.py
 ```
 (See the [Preview](#Preview) section)
 
