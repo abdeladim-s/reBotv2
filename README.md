@@ -27,7 +27,7 @@ git clone https://github.com/AbdeladimSadiki/reBotv2
 cd reBotv2
 pip install -r requirements.txt 
 ```
-"scrot" must be installed to use screenshot functions in Linux. Run: 
+In case you are using Linux, "scrot" must be installed: 
 ```shell script
 sudo apt-get install scrot
 ```
