@@ -35,7 +35,6 @@ sudo apt-get install scrot
 Usage
 ===
 * First open the page where the reCAPTCHA v2 that you want to solve on Chrome.
-* Make screenshots like the ones located on the `./images/` folder. (With the same file names!) [The images given are from [reCAPTCHA v2 demo](https://www.google.com/recaptcha/api2/demo)]
 * Open a terminal and navigate to the bot folder. 
 * Run the command :
 ```shell script
