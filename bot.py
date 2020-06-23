@@ -17,7 +17,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 """
 
 from __future__ import print_function
@@ -29,55 +29,95 @@ import clipboard
 import urllib.request
 import speech_recognition as sr
 from pydub import AudioSegment
+from pynput import keyboard
+
+
+class Element:
+
+    def __init__(self, name: str, img_path: str):
+        self.name = name
+        self.img_path = img_path
+        self.x = None
+        self.y = None
 
 
 class Bot:
 
     def __init__(self):
-        pyautogui.FAILSAFE = True # abort the program by moving the mouse to the upper-left corner
-        self.captcha_box_X = 0
-        self.captcha_box_Y = 0
-
-    def setup(self):
-        if not self.find_captcha_box():
-            print("Couldn't find the captcha box")
-            pyautogui.alert('You have 3 seconds to move the cursor manually to the top left corner')
-            t_end = time.time() + 4
-            while time.time() < t_end:
-                self.captcha_box_X, self.captcha_box_Y = pyautogui.position()
-                print(self.captcha_box_X, self.captcha_box_Y)
-
-    def find_captcha_box(self):
-        print('searching for the captcha box ... (This may take a while!)')
-        captcha = pyautogui.locateOnScreen('images/captcha.png')
-        if captcha is not None:
-            self.captcha_box_X = captcha.left + 15
-            self.captcha_box_Y = captcha.top + 15
-            print('Found captcha at: {}, {}'.format(self.captcha_box_X, self.captcha_box_Y))
-            return True
-        return False
+        pyautogui.FAILSAFE = True  # abort the program by movingthe mouse to the upper-left corner
+        self.delay = 2  # delay between actions
+        self.captcha_box = Element('captcha_box', './images/captcha_box.png')
+        self.ok = Element('ok', './images/ok.png')
 
     @staticmethod
-    def find(path):
-        element_location = pyautogui.locateCenterOnScreen(path)
+    def find_automatically(element: Element):
+        element_location = pyautogui.locateCenterOnScreen(element.img_path)
         if element_location is not None:
-            return element_location.left, element_location.top
+            element.x, element.y = element_location
+            return True
         else:
             return False
 
-    def click_captcha_box(self):
-        x = self.captcha_box_X + random.randint(5, 20)  # add some random number in case if there is any mouse behaviour detection
-        y = self.captcha_box_Y + random.randint(5, 30)
+    @staticmethod
+    def find_manually(element: Element):
+        pyautogui.alert("Couldn't find the element, navigate to the center of the element and press alt")
+
+        def on_press(key):
+            if key == keyboard.Key.ctrl:
+                element.x, element.y = pyautogui.position()
+                return False
+
+        with keyboard.Listener(on_press=on_press) as listener:
+            listener.join()
+
+    def find(self, element: Element):
+        if element.x is not None:
+            return
+        if self.find_automatically(element):
+            pass
+        else:
+            self.find_manually(element)
+        print(element.name + ' at: {}, {}'.format(element.x, element.y))
+
+    def goto(self, delta_x, delta_y):
+        x = self.captcha_box.x + delta_x
+        y = self.captcha_box.y + delta_y
         self.human_behaviour_click(x, y)
+        time.sleep(self.delay)
+
+    def download_audio_and_recognize(self):
+        print('Clicking the download button ...')
+        # 167 * 50 -> download
+        self.goto(167, 50)
+
+        print('Downloading audio ...')
+        self.copy_url()
+        url = clipboard.paste()
+        print(url)
+        urllib.request.urlretrieve(url, 'cache/audio.mp3')
+        audio_text = self.recognize_audio()
+        return audio_text
+
+    @staticmethod
+    def copy_url():
+        # select url
+        pyautogui.press('f6')
+        # copy
+        pyautogui.hotkey('ctrl', 'c')
+        # close tab
+        pyautogui.hotkey('ctrl', 'w')
 
     @staticmethod
     def recognize_audio():
-        sound = AudioSegment.from_mp3('./cache/audio.mp3')
+        sound = AudioSegment.from_mp3('cache/audio.mp3')
         sound.export('cache/audio.wav', format="wav")
         AUDIO_FILE = 'cache/audio.wav'
+        # use the audio file as the audio source
         r = sr.Recognizer()
         with sr.AudioFile(AUDIO_FILE) as source:
-            audio = r.record(source)
+            audio = r.record(source)  # read the entire audio file
+
+        # recognize speech using Google Speech Recognition
         try:
             # for testing purposes, we're just using the default API key
             # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
@@ -99,72 +139,46 @@ class Bot:
         pyautogui.moveTo(x, y, duration=0.5, tween=random.choice(tween_list))
         pyautogui.click()
 
-    @staticmethod
-    def check_for_ok():
-        print('Checking for OK ... (This may take a while!)')
-        ok_location = pyautogui.locateOnScreen('images/ok.png')
-        if ok_location is not None:
-            print('OK! DONE :)')
-            return True
-        else:
-            print("Not OK! What a bad luck!")
-            return False
+    def run(self):
+        time.sleep(self.delay)
+        print("Searching for the captcha box ... ")
+        self.find(self.captcha_box)
+        self.human_behaviour_click(self.captcha_box.x, self.captcha_box.y)
+        time.sleep(self.delay)
 
-    def run(self) -> None:
-        print('running ...')
-        self.click_captcha_box()
-        time.sleep(3)
+        print('Clicking the audio button ...')
+        self.goto(105, 265)
 
-        # Check if it is OK, maybe! who knows ;)
-        if self.check_for_ok():
-            return
-        print("No worries, let's hack it!")
-        # clicking the audio icon
-        x = self.captcha_box_X + 115
-        y = self.captcha_box_Y + 282
-        self.human_behaviour_click(x, y)
-        time.sleep(3)
+        audio_text = self.download_audio_and_recognize()
 
-        audio_text = None
-        # while audio_text is None:
-        # right click the download button to copy the url of the audio
-        x = self.captcha_box_X + 183
-        y = self.captcha_box_Y + 60
-        pyautogui.rightClick(x, y)
-        x = x + 37
-        y = y + 130
-        self.human_behaviour_click(x, y)
-
-        # download the audio file to the cache dir
-        url = clipboard.paste()
-        print(url)
-        urllib.request.urlretrieve(url, 'cache/audio.mp3')
-        audio_text = self.recognize_audio()
-        if audio_text is None:
-            # press get another challenge
+        # loop till getting a recognizable challenge
+        while audio_text is None:
+            # press refresh to get another challenge
             print("Couldn't recognize the audio, get another one!")
-            x = self.captcha_box_X + 74
-            y = self.captcha_box_Y + 138
-            pyautogui.rightClick(x, y, duration=1)
+            print("Clicking the refresh button ... ")
+            # 59 * 11 -> refresh button
+            self.goto(59, 11)
+            audio_text = self.download_audio_and_recognize()
 
-        # write down the output from the recognizer
-        x = x - 66
-        y = y - 188
-        self.human_behaviour_click(x, y)
+        print("Clicking the text field ...")
+        # 160 * 0 -> text field
+        self.goto(160, 0)
+
+        # write the text
         pyautogui.write(audio_text)
 
-        # click verify
-        x = x + 98
-        y = y + 110
-        self.human_behaviour_click(x, y)
-        time.sleep(3)
+        print("Clicking the verify button ...")
+        # 249 * 111 -> verify
+        self.goto(249, 111)
 
-        # recheck
-        if self.check_for_ok():
-            return
+        # checking for ok
+        print("Checking for OK!")
+        if self.find_automatically(self.ok):
+            print('DONE!')
+        else:
+            print('Something went wrong :(')
 
 
 if __name__ == '__main__':
     bot = Bot()
-    bot.setup()
     bot.run()
