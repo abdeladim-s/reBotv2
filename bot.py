@@ -60,7 +60,7 @@ class Bot:
 
     @staticmethod
     def find_manually(element: Element):
-        pyautogui.alert("Couldn't find the element, navigate to the center of the element and press alt")
+        pyautogui.alert("Couldn't find the element, navigate to the center of the element and press CTRL")
 
         def on_press(key):
             if key == keyboard.Key.ctrl:
